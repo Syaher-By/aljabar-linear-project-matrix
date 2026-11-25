@@ -1,0 +1,2602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MatrixLab — Interactive Matrix Calculator & Share Tool</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS & THEME VARIABLES (LIGHT & DARK MODE)
+       ========================================================================== */
+    :root {
+      --bg-app: #f4f6fa;
+      --bg-surface: #ffffff;
+      --bg-surface-subtle: #f8fafc;
+      --bg-input: #ffffff;
+      --bg-input-focus: #eef2ff;
+      --bg-badge: #eef2ff;
+      --bg-hover: #f1f5f9;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-accent: #4f46e5;
+      --text-on-accent: #ffffff;
+
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-secondary: #0ea5e9;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-danger: #dc2626;
+      --accent-danger-bg: #fef2f2;
+      --accent-danger-border: #fecaca;
+
+      --border-color: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --bracket-color: #1e293b;
+
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 12px 28px -6px rgba(15, 23, 42, 0.12);
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-full: 9999px;
+
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-subtle: #182132;
+      --bg-input: #0f172a;
+      --bg-input-focus: #1e1b4b;
+      --bg-badge: #1e1b4b;
+      --bg-hover: #1e293b;
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-accent: #818cf8;
+      --text-on-accent: #ffffff;
+
+      --accent-primary: #6366f1;
+      --accent-primary-hover: #818cf8;
+      --accent-secondary: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-danger: #f87171;
+      --accent-danger-bg: rgba(127, 29, 29, 0.35);
+      --accent-danger-border: rgba(248, 113, 113, 0.35);
+
+      --border-color: #1f2937;
+      --border-strong: #334155;
+      --bracket-color: #cbd5e1;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 6px 16px -4px rgba(0, 0, 0, 0.45);
+      --shadow-lg: 0 16px 36px -8px rgba(0, 0, 0, 0.65);
+    }
+
+    /* ==========================================================================
+       2. BASE RESET & LAYOUT STRUCTURE
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--transition-normal), color var(--transition-normal);
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .app-container {
+        padding: 24px 28px 40px;
+        gap: 24px;
+      }
+    }
+
+    /* ==========================================================================
+       3. TOP NAVIGATION HEADER
+       ========================================================================== */
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 14px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.28);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: var(--bg-badge);
+      color: var(--text-accent);
+    }
+
+    .brand-subtitle {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .topbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ==========================================================================
+       4. BUTTONS & FORM CONTROLS
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 13px;
+      min-height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: var(--text-on-accent);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-primary-hover);
+      border-color: var(--accent-primary-hover);
+    }
+
+    .btn-accent-outline {
+      border-color: var(--accent-primary);
+      color: var(--text-accent);
+      background: var(--bg-badge);
+    }
+
+    .btn-accent-outline:hover:not(:disabled) {
+      background: var(--accent-primary);
+      color: #ffffff;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      min-height: 30px;
+      font-size: 0.78rem;
+    }
+
+    .btn-icon {
+      padding: 7px;
+      min-width: 36px;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       5. MATRIX WORKSPACE GRID (MATRIX A & MATRIX B)
+       ========================================================================== */
+    .matrices-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (min-width: 1024px) {
+      .matrices-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .matrices-grid.single-matrix {
+        grid-template-columns: minmax(0, 760px);
+        justify-content: center;
+      }
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-surface-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .matrix-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .matrix-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .matrix-badge-a {
+      background: rgba(79, 70, 229, 0.14);
+      color: var(--text-accent);
+    }
+
+    .matrix-badge-b {
+      background: rgba(14, 165, 233, 0.14);
+      color: var(--accent-secondary);
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 650;
+    }
+
+    .dim-tag {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 2px 7px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Dimension Steppers */
+    .dim-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stepper {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .stepper-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 0 7px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .stepper-btn {
+      width: 26px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-weight: 700;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background var(--transition-fast);
+    }
+
+    .stepper-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-accent);
+    }
+
+    .stepper-input {
+      width: 32px;
+      height: 28px;
+      border: none;
+      border-left: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    .stepper-input::-webkit-inner-spin-button,
+    .stepper-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Quick-fill Toolbar */
+    .quick-toolbar {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar-label {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    /* Matrix Bracket & Input Grid Container */
+    .matrix-viewport {
+      padding: 22px 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: auto;
+      min-height: 195px;
+    }
+
+    .matrix-bracket-wrap {
+      display: inline-flex;
+      align-items: stretch;
+      position: relative;
+      padding: 6px 10px;
+    }
+
+    /* Crisp Mathematical Square Brackets [ and ] */
+    .matrix-bracket-left,
+    .matrix-bracket-right {
+      width: 10px;
+      border-top: 2.5px solid var(--bracket-color);
+      border-bottom: 2.5px solid var(--bracket-color);
+      flex-shrink: 0;
+      transition: border-color var(--transition-normal);
+    }
+
+    .matrix-bracket-left {
+      border-left: 2.5px solid var(--bracket-color);
+      border-top-left-radius: 3px;
+      border-bottom-left-radius: 3px;
+      margin-right: 6px;
+    }
+
+    .matrix-bracket-right {
+      border-right: 2.5px solid var(--bracket-color);
+      border-top-right-radius: 3px;
+      border-bottom-right-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .matrix-grid {
+      display: grid;
+      gap: 7px;
+    }
+
+    .matrix-cell {
+      width: 58px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-align: center;
+      padding: 4px;
+      transition: all var(--transition-fast);
+    }
+
+    @media (max-width: 480px) {
+      .matrix-cell {
+        width: 48px;
+        height: 35px;
+        font-size: 0.82rem;
+      }
+    }
+
+    .matrix-cell:hover {
+      border-color: var(--border-strong);
+    }
+
+    .matrix-cell:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      background: var(--bg-input-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    }
+
+    .card-footer-hint {
+      padding: 8px 18px;
+      background: var(--bg-surface-subtle);
+      border-top: 1px solid var(--border-color);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* ==========================================================================
+       6. OPERATIONS DECK
+       ========================================================================== */
+    .operations-card {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .ops-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .ops-title {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 650;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .target-switcher {
+      display: inline-flex;
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .target-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .target-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ops-sections {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 960px) {
+      .ops-sections {
+        grid-template-columns: 1.65fr 1fr;
+      }
+    }
+
+    .op-group {
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .op-group-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .op-buttons-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .op-btn {
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.83rem;
+      padding: 8px 13px;
+      background: var(--bg-surface);
+    }
+
+    .op-btn .math-sym {
+      font-family: var(--font-mono);
+      color: var(--text-accent);
+      font-weight: 700;
+    }
+
+    .inline-param-group {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .inline-param-input {
+      width: 54px;
+      height: 30px;
+      border: none;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 4px;
+    }
+
+    .inline-param-input:focus {
+      outline: 2px solid var(--accent-primary);
+    }
+
+    .inline-param-group .btn {
+      border: none;
+      min-height: 30px;
+      padding: 4px 10px;
+    }
+
+    /* ==========================================================================
+       7. RESULT & EXPORT STUDIO
+       ========================================================================== */
+    .result-card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-header {
+      padding: 14px 20px;
+      background: var(--bg-surface-subtle);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .result-op-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: var(--bg-badge);
+      color: var(--text-accent);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+
+    .result-dim-badge {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+    }
+
+    .result-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-body {
+      padding: 26px 20px;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    /* Empty & Error States in Result Panel */
+    .result-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+      max-width: 440px;
+    }
+
+    .result-placeholder p {
+      margin: 6px 0 0;
+      font-size: 0.85rem;
+    }
+
+    .result-error-box {
+      background: var(--accent-danger-bg);
+      border: 1px solid var(--accent-danger-border);
+      color: var(--accent-danger);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      max-width: 580px;
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .result-error-box svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Scalar Output Display */
+    .scalar-result-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 18px 32px;
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+
+    .scalar-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .scalar-value {
+      font-family: var(--font-mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-accent);
+    }
+
+    .scalar-note {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* Result Matrix Read-Only Cells */
+    .result-cell {
+      min-width: 62px;
+      height: 38px;
+      padding: 0 10px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    /* Export & Share Footer Bar */
+    .export-bar {
+      padding: 14px 20px;
+      background: var(--bg-surface-subtle);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .export-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .export-target-select {
+      height: 30px;
+      padding: 0 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       8. TOAST NOTIFICATIONS
+       ========================================================================== */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+      max-width: calc(100vw - 40px);
+    }
+
+    .toast {
+      pointer-events: auto;
+      background: var(--text-primary);
+      color: var(--bg-surface);
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastSlideIn 200ms ease-out forwards;
+    }
+
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      flex-shrink: 0;
+    }
+
+    .toast.toast-warn .toast-dot {
+      background: var(--accent-amber);
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- ======================================================================
+         TOP NAVIGATION BAR
+         ====================================================================== -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">[M]</div>
+        <div>
+          <h1 class="brand-title">
+            MatrixLab
+            <span class="brand-badge">Linear Algebra Studio</span>
+          </h1>
+          <p class="brand-subtitle">Interactive matrix editor, exact rational solver &amp; instant URL sharing</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" class="btn" id="btnToggleB" title="Show or hide Matrix B">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="18" rx="1"></rect>
+          </svg>
+          <span id="toggleBText">Hide Matrix B</span>
+        </button>
+
+        <button type="button" class="btn" id="btnSwapAB" title="Swap Matrix A and Matrix B">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+          </svg>
+          <span>Swap A &harr; B</span>
+        </button>
+
+        <button type="button" class="btn btn-primary" id="btnShareLink" title="Serialize matrices into URL hash and copy link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+          <span>Copy Share Link</span>
+        </button>
+
+        <button type="button" class="btn btn-icon" id="btnThemeToggle" aria-label="Toggle Light/Dark Theme" title="Toggle Light/Dark Theme">
+          <svg id="iconSun" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+          </svg>
+          <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ======================================================================
+         INTERACTIVE MATRIX EDITORS (MATRIX A & MATRIX B)
+         ====================================================================== -->
+    <section class="matrices-grid" id="matricesGrid" aria-label="Matrix Editors">
+      <!-- MATRIX A CARD -->
+      <article class="card" id="cardMatrixA">
+        <div class="card-header">
+          <div class="matrix-title-group">
+            <span class="matrix-badge matrix-badge-a">A</span>
+            <h2 class="card-title">Matrix A</h2>
+            <span class="dim-tag" id="dimTagA">3 &times; 3</span>
+          </div>
+
+          <div class="dim-controls">
+            <div class="stepper" title="Rows of Matrix A (1 to 8)">
+              <span class="stepper-label">Rows</span>
+              <button type="button" class="stepper-btn" data-matrix="A" data-axis="rows" data-delta="-1" aria-label="Decrease Matrix A rows">&minus;</button>
+              <input type="number" class="stepper-input" id="rowsInputA" min="1" max="8" value="3" aria-label="Matrix A row count" />
+              <button type="button" class="stepper-btn" data-matrix="A" data-axis="rows" data-delta="1" aria-label="Increase Matrix A rows">+</button>
+            </div>
+
+            <div class="stepper" title="Columns of Matrix A (1 to 8)">
+              <span class="stepper-label">Cols</span>
+              <button type="button" class="stepper-btn" data-matrix="A" data-axis="cols" data-delta="-1" aria-label="Decrease Matrix A columns">&minus;</button>
+              <input type="number" class="stepper-input" id="colsInputA" min="1" max="8" value="3" aria-label="Matrix A column count" />
+              <button type="button" class="stepper-btn" data-matrix="A" data-axis="cols" data-delta="1" aria-label="Increase Matrix A columns">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-toolbar">
+          <span class="toolbar-label">Fill:</span>
+          <button type="button" class="btn btn-sm" data-fill="random" data-target="A">Random</button>
+          <button type="button" class="btn btn-sm" data-fill="identity" data-target="A">Identity</button>
+          <button type="button" class="btn btn-sm" data-fill="zeros" data-target="A">Zeros</button>
+          <button type="button" class="btn btn-sm" data-fill="uppertri" data-target="A">Upper Tri</button>
+          <button type="button" class="btn btn-sm" data-fill="clear" data-target="A">Clear</button>
+        </div>
+
+        <div class="matrix-viewport">
+          <div class="matrix-bracket-wrap">
+            <div class="matrix-bracket-left" aria-hidden="true"></div>
+            <div class="matrix-grid" id="gridA" role="grid" aria-label="Matrix A cells"></div>
+            <div class="matrix-bracket-right" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="card-footer-hint">
+          <span>Tip: Use Arrow keys, Tab, or Enter to navigate; paste CSV/Excel tables into any cell.</span>
+        </div>
+      </article>
+
+      <!-- MATRIX B CARD -->
+      <article class="card" id="cardMatrixB">
+        <div class="card-header">
+          <div class="matrix-title-group">
+            <span class="matrix-badge matrix-badge-b">B</span>
+            <h2 class="card-title">Matrix B</h2>
+            <span class="dim-tag" id="dimTagB">3 &times; 3</span>
+          </div>
+
+          <div class="dim-controls">
+            <div class="stepper" title="Rows of Matrix B (1 to 8)">
+              <span class="stepper-label">Rows</span>
+              <button type="button" class="stepper-btn" data-matrix="B" data-axis="rows" data-delta="-1" aria-label="Decrease Matrix B rows">&minus;</button>
+              <input type="number" class="stepper-input" id="rowsInputB" min="1" max="8" value="3" aria-label="Matrix B row count" />
+              <button type="button" class="stepper-btn" data-matrix="B" data-axis="rows" data-delta="1" aria-label="Increase Matrix B rows">+</button>
+            </div>
+
+            <div class="stepper" title="Columns of Matrix B (1 to 8)">
+              <span class="stepper-label">Cols</span>
+              <button type="button" class="stepper-btn" data-matrix="B" data-axis="cols" data-delta="-1" aria-label="Decrease Matrix B columns">&minus;</button>
+              <input type="number" class="stepper-input" id="colsInputB" min="1" max="8" value="3" aria-label="Matrix B column count" />
+              <button type="button" class="stepper-btn" data-matrix="B" data-axis="cols" data-delta="1" aria-label="Increase Matrix B columns">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-toolbar">
+          <span class="toolbar-label">Fill:</span>
+          <button type="button" class="btn btn-sm" data-fill="random" data-target="B">Random</button>
+          <button type="button" class="btn btn-sm" data-fill="identity" data-target="B">Identity</button>
+          <button type="button" class="btn btn-sm" data-fill="zeros" data-target="B">Zeros</button>
+          <button type="button" class="btn btn-sm" data-fill="uppertri" data-target="B">Upper Tri</button>
+          <button type="button" class="btn btn-sm" data-fill="clear" data-target="B">Clear</button>
+        </div>
+
+        <div class="matrix-viewport">
+          <div class="matrix-bracket-wrap">
+            <div class="matrix-bracket-left" aria-hidden="true"></div>
+            <div class="matrix-grid" id="gridB" role="grid" aria-label="Matrix B cells"></div>
+            <div class="matrix-bracket-right" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="card-footer-hint">
+          <span>Supports integers, decimals (e.g. -2.5), and fractions (e.g. 1/3).</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- ======================================================================
+         MATRIX OPERATIONS DECK
+         ====================================================================== -->
+    <section class="card operations-card" aria-label="Matrix Operations">
+      <div class="ops-header">
+        <h2 class="ops-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+            <line x1="8" y1="6" x2="16" y2="6"></line>
+            <line x1="8" y1="12" x2="10" y2="12"></line>
+            <line x1="14" y1="12" x2="16" y2="12"></line>
+            <line x1="8" y1="16" x2="10" y2="16"></line>
+            <line x1="14" y1="16" x2="16" y2="16"></line>
+          </svg>
+          Matrix Operations
+        </h2>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Unary Target:</span>
+          <div class="target-switcher" role="group" aria-label="Select Unary Operation Target">
+            <button type="button" class="target-btn active" id="unaryTargetA" data-unary-target="A">Matrix A</button>
+            <button type="button" class="target-btn" id="unaryTargetB" data-unary-target="B">Matrix B</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-sections">
+        <!-- UNARY OPERATIONS -->
+        <div class="op-group">
+          <div class="op-group-label" id="unaryGroupLabel">Single-Matrix Operations (on Matrix A)</div>
+          <div class="op-buttons-row">
+            <button type="button" class="btn op-btn" data-op="transpose">
+              Transpose <span class="math-sym" id="symTranspose">Aᵀ</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="inverse">
+              Inverse <span class="math-sym" id="symInverse">A⁻¹</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="determinant">
+              Determinant <span class="math-sym" id="symDet">det(A)</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="rref">
+              RREF <span class="math-sym" id="symRref">rref(A)</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="trace">
+              Trace <span class="math-sym" id="symTrace">tr(A)</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="rank">
+              Rank <span class="math-sym" id="symRank">rank(A)</span>
+            </button>
+
+            <div class="inline-param-group" title="Multiply matrix by scalar k">
+              <span style="padding-left: 8px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">k =</span>
+              <input type="text" class="inline-param-input" id="scalarInput" value="2" aria-label="Scalar multiplier k" />
+              <button type="button" class="btn op-btn" data-op="scalar">
+                <span class="math-sym" id="symScalar">k &times; A</span>
+              </button>
+            </div>
+
+            <div class="inline-param-group" title="Raise square matrix to integer power n (-5 to 12)">
+              <span style="padding-left: 8px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">n =</span>
+              <input type="number" class="inline-param-input" id="powerInput" value="2" min="-5" max="12" aria-label="Matrix exponent n" />
+              <button type="button" class="btn op-btn" data-op="power">
+                <span class="math-sym" id="symPower">Aⁿ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BINARY OPERATIONS -->
+        <div class="op-group">
+          <div class="op-group-label">Binary Operations (A &amp; B)</div>
+          <div class="op-buttons-row">
+            <button type="button" class="btn op-btn" data-op="add">
+              Add <span class="math-sym">A + B</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="subtract">
+              Subtract <span class="math-sym">A &minus; B</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="multiply">
+              Multiply <span class="math-sym">A &times; B</span>
+            </button>
+            <button type="button" class="btn op-btn" data-op="multiplyBA">
+              Reverse Multiply <span class="math-sym">B &times; A</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         RESULT DISPLAY, CHAINING & EXPORT STUDIO
+         ====================================================================== -->
+    <section class="card result-card" aria-label="Calculation Result and Export">
+      <div class="result-header">
+        <div class="result-meta">
+          <h2 class="card-title">Result</h2>
+          <span class="result-op-badge" id="resultOpBadge">Ready</span>
+          <span class="result-dim-badge hidden" id="resultDimBadge">3 &times; 3</span>
+        </div>
+
+        <div class="result-controls">
+          <div class="target-switcher" role="group" aria-label="Number Display Format">
+            <button type="button" class="target-btn active" id="fmtDecimal" data-format="decimal">Decimal</button>
+            <button type="button" class="target-btn" id="fmtFraction" data-format="fraction">Fraction</button>
+          </div>
+
+          <button type="button" class="btn btn-sm btn-accent-outline" id="btnSendToA" disabled title="Copy result matrix into Matrix A">
+            Send Result &rarr; A
+          </button>
+          <button type="button" class="btn btn-sm btn-accent-outline" id="btnSendToB" disabled title="Copy result matrix into Matrix B">
+            Send Result &rarr; B
+          </button>
+        </div>
+      </div>
+
+      <div class="result-body" id="resultBody">
+        <div class="result-placeholder">
+          <strong>Select any matrix operation above to compute</strong>
+          <p>Results support exact rational fractions, clean decimals, one-click chaining into Matrix A or B, and LaTeX / CSV / JSON export.</p>
+        </div>
+      </div>
+
+      <!-- MULTI-FORMAT COPY & EXPORT BAR -->
+      <div class="export-bar">
+        <div class="export-group">
+          <span class="toolbar-label">Copy / Export Source:</span>
+          <select class="export-target-select" id="exportSourceSelect" aria-label="Choose matrix to export">
+            <option value="A">Matrix A</option>
+            <option value="B">Matrix B</option>
+            <option value="R">Result Matrix</option>
+          </select>
+        </div>
+
+        <div class="export-group">
+          <button type="button" class="btn btn-sm" data-export="latex" title="Copy as LaTeX bmatrix">Copy LaTeX</button>
+          <button type="button" class="btn btn-sm" data-export="csv" title="Copy as Comma-Separated Values">Copy CSV</button>
+          <button type="button" class="btn btn-sm" data-export="json" title="Copy as 2D JSON Array">Copy JSON</button>
+          <button type="button" class="btn btn-sm" data-export="text" title="Copy as Formatted Plain Text">Copy Plain Text</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script>
+    /**
+     * ==========================================================================
+     * MATRIXLAB — SINGLE-FILE LINEAR ALGEBRA & MATRIX SHARING ENGINE
+     * ==========================================================================
+     * Architecture:
+     *  1. Rational (Exact Fraction) & Number Parsing Engine (`Rational`)
+     *  2. Linear Algebra Matrix Operations (`MatrixEngine`)
+     *  3. Application State & URL-Hash Serialization (`AppState` & `ShareCodec`)
+     *  4. Interactive UI Controller (Grids, Keyboard Nav, Paste, Export, Toasts)
+     */
+
+    (function () {
+      "use strict";
+
+      /* ========================================================================
+         1. RATIONAL NUMBER ENGINE (EXACT FRACTIONS WITH SAFE FLOAT FALLBACK)
+         ======================================================================== */
+      class Rational {
+        constructor(num, den = 1) {
+          if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) {
+            this.num = NaN;
+            this.den = 1;
+            this.isFloat = true;
+            return;
+          }
+
+          // Check if integers are within safe bounds for exact GCD reduction
+          if (
+            Number.isInteger(num) &&
+            Number.isInteger(den) &&
+            Math.abs(num) <= 1e12 &&
+            Math.abs(den) <= 1e12
+          ) {
+            if (den < 0) {
+              num = -num;
+              den = -den;
+            }
+            if (num === 0) {
+              this.num = 0;
+              this.den = 1;
+              this.isFloat = false;
+              return;
+            }
+            const g = Rational.gcd(Math.abs(num), den);
+            this.num = num / g;
+            this.den = den / g;
+            this.isFloat = false;
+          } else {
+            // Fallback to high-precision float representation
+            this.num = num / den;
+            this.den = 1;
+            this.isFloat = true;
+          }
+        }
+
+        static gcd(a, b) {
+          a = Math.abs(a);
+          b = Math.abs(b);
+          while (b !== 0) {
+            const t = b;
+            b = a % b;
+            a = t;
+          }
+          return a || 1;
+        }
+
+        static fromInput(raw) {
+          if (raw instanceof Rational) return raw;
+          if (typeof raw === "number") return Rational.fromDecimal(raw);
+          const str = String(raw ?? "").trim();
+          if (str === "" || str === "-") return new Rational(0, 1);
+
+          // Support fraction inputs like "1/3" or "-5/2"
+          if (str.includes("/")) {
+            const parts = str.split("/");
+            if (parts.length === 2) {
+              const n = Number(parts[0].trim());
+              const d = Number(parts[1].trim());
+              if (Number.isFinite(n) && Number.isFinite(d) && d !== 0) {
+                return Rational.fromDecimal(n).div(Rational.fromDecimal(d));
+              }
+            }
+          }
+
+          const val = Number(str);
+          if (!Number.isFinite(val)) return new Rational(0, 1);
+          return Rational.fromDecimal(val);
+        }
+
+        static fromDecimal(val) {
+          if (!Number.isFinite(val) || Math.abs(val) < 1e-13) {
+            return new Rational(0, 1);
+          }
+          if (Number.isInteger(val) && Math.abs(val) <= 1e12) {
+            return new Rational(val, 1);
+          }
+          const str = val.toString();
+          if (!str.includes("e") && str.includes(".")) {
+            const decimals = str.split(".")[1].length;
+            if (decimals <= 7) {
+              const scale = Math.pow(10, decimals);
+              const scaledNum = Math.round(val * scale);
+              if (Math.abs(scaledNum) <= 1e12) {
+                return new Rational(scaledNum, scale);
+              }
+            }
+          }
+          const r = new Rational(0, 1);
+          r.num = val;
+          r.den = 1;
+          r.isFloat = true;
+          return r;
+        }
+
+        valueOf() {
+          const v = this.num / this.den;
+          return Math.abs(v) < 1e-12 ? 0 : v;
+        }
+
+        isZero() {
+          return Math.abs(this.valueOf()) < 1e-12;
+        }
+
+        add(other) {
+          if (this.isFloat || other.isFloat) {
+            return Rational.fromDecimal(this.valueOf() + other.valueOf());
+          }
+          const num = this.num * other.den + other.num * this.den;
+          const den = this.den * other.den;
+          if (Math.abs(num) > 1e12 || Math.abs(den) > 1e12) {
+            return Rational.fromDecimal(this.valueOf() + other.valueOf());
+          }
+          return new Rational(num, den);
+        }
+
+        sub(other) {
+          if (this.isFloat || other.isFloat) {
+            return Rational.fromDecimal(this.valueOf() - other.valueOf());
+          }
+          const num = this.num * other.den - other.num * this.den;
+          const den = this.den * other.den;
+          if (Math.abs(num) > 1e12 || Math.abs(den) > 1e12) {
+            return Rational.fromDecimal(this.valueOf() - other.valueOf());
+          }
+          return new Rational(num, den);
+        }
+
+        mul(other) {
+          if (this.isZero() || other.isZero()) return new Rational(0, 1);
+          if (this.isFloat || other.isFloat) {
+            return Rational.fromDecimal(this.valueOf() * other.valueOf());
+          }
+          // Cross-reduce before multiplying to prevent overflow
+          const g1 = Rational.gcd(this.num, other.den);
+          const g2 = Rational.gcd(other.num, this.den);
+          const num = (this.num / g1) * (other.num / g2);
+          const den = (this.den / g2) * (other.den / g1);
+          if (Math.abs(num) > 1e12 || Math.abs(den) > 1e12) {
+            return Rational.fromDecimal(this.valueOf() * other.valueOf());
+          }
+          return new Rational(num, den);
+        }
+
+        div(other) {
+          if (other.isZero()) {
+            throw new Error("Division by zero encountered.");
+          }
+          if (this.isZero()) return new Rational(0, 1);
+          if (this.isFloat || other.isFloat) {
+            return Rational.fromDecimal(this.valueOf() / other.valueOf());
+          }
+          return this.mul(new Rational(other.den, other.num));
+        }
+
+        format(mode = "decimal") {
+          const val = this.valueOf();
+          if (Math.abs(val) < 1e-12) return "0";
+
+          if (mode === "fraction") {
+            if (!this.isFloat) {
+              return this.den === 1 ? `${this.num}` : `${this.num}/${this.den}`;
+            }
+            // Continued fraction approximation for clean float-to-fraction display
+            const approx = Rational.approximateFraction(val, 10000);
+            if (approx) {
+              return approx.den === 1 ? `${approx.num}` : `${approx.num}/${approx.den}`;
+            }
+          }
+
+          // Clean decimal formatting (up to 4 decimal places, stripping trailing zeros)
+          const rounded = Number(val.toFixed(4));
+          return Object.is(rounded, -0) ? "0" : String(rounded);
+        }
+
+        static approximateFraction(x, maxDen = 10000) {
+          const sign = x < 0 ? -1 : 1;
+          x = Math.abs(x);
+          if (Math.abs(x - Math.round(x)) < 1e-9) {
+            return { num: sign * Math.round(x), den: 1 };
+          }
+          let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+          let b = x;
+          for (let i = 0; i < 16; i++) {
+            const a = Math.floor(b);
+            const h = a * h1 + h2;
+            const k = a * k1 + k2;
+            if (k > maxDen) break;
+            h2 = h1; h1 = h;
+            k2 = k1; k1 = k;
+            if (Math.abs(x - h1 / k1) < 1e-9) break;
+            const rem = b - a;
+            if (rem < 1e-12) break;
+            b = 1 / rem;
+          }
+          if (Math.abs(x - h1 / k1) < 1e-6) {
+            return { num: sign * h1, den: k1 };
+          }
+          return null;
+        }
+      }
+
+      /* ========================================================================
+         2. LINEAR ALGEBRA MATRIX ENGINE
+         ======================================================================== */
+      const MatrixEngine = {
+        toRationalMatrix(rawGrid) {
+          return rawGrid.map((row) => row.map((cell) => Rational.fromInput(cell)));
+        },
+
+        identity(n) {
+          return Array.from({ length: n }, (_, i) =>
+            Array.from({ length: n }, (_, j) => new Rational(i === j ? 1 : 0, 1))
+          );
+        },
+
+        transpose(M) {
+          const rows = M.length;
+          const cols = M[0].length;
+          const res = Array.from({ length: cols }, () => Array(rows));
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              res[c][r] = M[r][c];
+            }
+          }
+          return res;
+        },
+
+        add(A, B) {
+          const rA = A.length, cA = A[0].length;
+          const rB = B.length, cB = B[0].length;
+          if (rA !== rB || cA !== cB) {
+            throw new Error(
+              `Dimension mismatch: Matrix A is ${rA} × ${cA}, while Matrix B is ${rB} × ${cB}. Addition requires identical dimensions.`
+            );
+          }
+          return A.map((row, r) => row.map((val, c) => val.add(B[r][c])));
+        },
+
+        subtract(A, B) {
+          const rA = A.length, cA = A[0].length;
+          const rB = B.length, cB = B[0].length;
+          if (rA !== rB || cA !== cB) {
+            throw new Error(
+              `Dimension mismatch: Matrix A is ${rA} × ${cA}, while Matrix B is ${rB} × ${cB}. Subtraction requires identical dimensions.`
+            );
+          }
+          return A.map((row, r) => row.map((val, c) => val.sub(B[r][c])));
+        },
+
+        multiply(A, B, labelA = "A", labelB = "B") {
+          const rA = A.length, cA = A[0].length;
+          const rB = B.length, cB = B[0].length;
+          if (cA !== rB) {
+            throw new Error(
+              `Dimension mismatch: Columns of ${labelA} (${cA}) must equal Rows of ${labelB} (${rB}) to compute ${labelA} × ${labelB}.`
+            );
+          }
+          const res = Array.from({ length: rA }, () =>
+            Array.from({ length: cB }, () => new Rational(0, 1))
+          );
+          for (let i = 0; i < rA; i++) {
+            for (let k = 0; k < cA; k++) {
+              if (A[i][k].isZero()) continue;
+              for (let j = 0; j < cB; j++) {
+                res[i][j] = res[i][j].add(A[i][k].mul(B[k][j]));
+              }
+            }
+          }
+          return res;
+        },
+
+        scalarMultiply(M, kRational) {
+          return M.map((row) => row.map((val) => val.mul(kRational)));
+        },
+
+        trace(M, label = "A") {
+          const rows = M.length, cols = M[0].length;
+          if (rows !== cols) {
+            throw new Error(
+              `Trace requires a square matrix, but Matrix ${label} is ${rows} × ${cols}.`
+            );
+          }
+          let sum = new Rational(0, 1);
+          for (let i = 0; i < rows; i++) {
+            sum = sum.add(M[i][i]);
+          }
+          return sum;
+        },
+
+        rref(M) {
+          const rows = M.length;
+          const cols = M[0].length;
+          const A = M.map((row) => row.slice());
+          let lead = 0;
+          let rank = 0;
+
+          for (let r = 0; r < rows; r++) {
+            if (lead >= cols) break;
+            let i = r;
+            while (A[i][lead].isZero()) {
+              i++;
+              if (i === rows) {
+                i = r;
+                lead++;
+                if (lead === cols) return { matrix: A, rank };
+              }
+            }
+
+            // Swap rows i and r
+            if (i !== r) {
+              const temp = A[i];
+              A[i] = A[r];
+              A[r] = temp;
+            }
+
+            // Scale pivot row so leading entry becomes 1
+            const pivot = A[r][lead];
+            for (let j = 0; j < cols; j++) {
+              A[r][j] = A[r][j].div(pivot);
+            }
+
+            // Eliminate all other entries in current column
+            for (let k = 0; k < rows; k++) {
+              if (k !== r && !A[k][lead].isZero()) {
+                const factor = A[k][lead];
+                for (let j = 0; j < cols; j++) {
+                  A[k][j] = A[k][j].sub(factor.mul(A[r][j]));
+                }
+              }
+            }
+
+            lead++;
+            rank++;
+          }
+
+          return { matrix: A, rank };
+        },
+
+        determinant(M, label = "A") {
+          const rows = M.length, cols = M[0].length;
+          if (rows !== cols) {
+            throw new Error(
+              `Determinant requires a square matrix, but Matrix ${label} is ${rows} × ${cols}.`
+            );
+          }
+          const n = rows;
+          const A = M.map((row) => row.slice());
+          let det = new Rational(1, 1);
+
+          for (let i = 0; i < n; i++) {
+            // Find non-zero pivot
+            let pivotRow = i;
+            while (pivotRow < n && A[pivotRow][i].isZero()) {
+              pivotRow++;
+            }
+            if (pivotRow === n) {
+              return new Rational(0, 1);
+            }
+            if (pivotRow !== i) {
+              const tmp = A[i];
+              A[i] = A[pivotRow];
+              A[pivotRow] = tmp;
+              det = det.mul(new Rational(-1, 1));
+            }
+
+            const pivot = A[i][i];
+            det = det.mul(pivot);
+
+            for (let r = i + 1; r < n; r++) {
+              if (!A[r][i].isZero()) {
+                const factor = A[r][i].div(pivot);
+                for (let c = i; c < n; c++) {
+                  A[r][c] = A[r][c].sub(factor.mul(A[i][c]));
+                }
+              }
+            }
+          }
+
+          return det;
+        },
+
+        inverse(M, label = "A") {
+          const rows = M.length, cols = M[0].length;
+          if (rows !== cols) {
+            throw new Error(
+              `Inverse requires a square matrix, but Matrix ${label} is ${rows} × ${cols}.`
+            );
+          }
+          const n = rows;
+          // Augment [M | I]
+          const aug = M.map((row, r) => [
+            ...row.slice(),
+            ...Array.from({ length: n }, (_, c) => new Rational(r === c ? 1 : 0, 1))
+          ]);
+
+          for (let i = 0; i < n; i++) {
+            let pivotRow = i;
+            while (pivotRow < n && aug[pivotRow][i].isZero()) {
+              pivotRow++;
+            }
+            if (pivotRow === n) {
+              throw new Error(
+                `Matrix ${label} is singular (det = 0) and does not have an inverse.`
+              );
+            }
+            if (pivotRow !== i) {
+              const tmp = aug[i];
+              aug[i] = aug[pivotRow];
+              aug[pivotRow] = tmp;
+            }
+
+            const pivot = aug[i][i];
+            for (let j = 0; j < 2 * n; j++) {
+              aug[i][j] = aug[i][j].div(pivot);
+            }
+
+            for (let r = 0; r < n; r++) {
+              if (r !== i && !aug[r][i].isZero()) {
+                const factor = aug[r][i];
+                for (let j = 0; j < 2 * n; j++) {
+                  aug[r][j] = aug[r][j].sub(factor.mul(aug[i][j]));
+                }
+              }
+            }
+          }
+
+          return aug.map((row) => row.slice(n));
+        },
+
+        power(M, n, label = "A") {
+          const rows = M.length, cols = M[0].length;
+          if (rows !== cols) {
+            throw new Error(
+              `Matrix power requires a square matrix, but Matrix ${label} is ${rows} × ${cols}.`
+            );
+          }
+          if (!Number.isInteger(n)) {
+            throw new Error("Matrix exponent n must be an integer.");
+          }
+          if (n === 0) {
+            return MatrixEngine.identity(rows);
+          }
+
+          let base = M;
+          let exp = n;
+          if (n < 0) {
+            base = MatrixEngine.inverse(M, label);
+            exp = Math.abs(n);
+          }
+
+          let result = MatrixEngine.identity(rows);
+          let current = base;
+          while (exp > 0) {
+            if (exp % 2 === 1) {
+              result = MatrixEngine.multiply(result, current, label, label);
+            }
+            exp = Math.floor(exp / 2);
+            if (exp > 0) {
+              current = MatrixEngine.multiply(current, current, label, label);
+            }
+          }
+          return result;
+        }
+      };
+
+      /* ========================================================================
+         3. APPLICATION STATE & URL-HASH SERIALIZATION
+         ======================================================================== */
+      const MIN_DIM = 1;
+      const MAX_DIM = 8;
+
+      const state = {
+        A: {
+          rows: 3,
+          cols: 3,
+          data: [
+            ["2", "1", "-1"],
+            ["-3", "-1", "2"],
+            ["-2", "1", "2"]
+          ]
+        },
+        B: {
+          rows: 3,
+          cols: 3,
+          data: [
+            ["1", "0", "2"],
+            ["0", "3", "-1"],
+            ["4", "1", "0"]
+          ]
+        },
+        showB: true,
+        unaryTarget: "A", // "A" or "B"
+        numberFormat: "decimal", // "decimal" or "fraction"
+        lastResult: null // { type: 'matrix'|'scalar'|'error', value, formula, note, dims }
+      };
+
+      const ShareCodec = {
+        encode(appState) {
+          const serializeMat = (m) => {
+            const flat = [];
+            for (let r = 0; r < m.rows; r++) {
+              for (let c = 0; c < m.cols; c++) {
+                const raw = (m.data[r]?.[c] ?? "0").trim() || "0";
+                flat.push(raw);
+              }
+            }
+            return `${m.rows}x${m.cols}:${flat.join(",")}`;
+          };
+
+          const payload = `v1|A=${serializeMat(appState.A)}|B=${serializeMat(appState.B)}|SB=${appState.showB ? 1 : 0}`;
+          // URL-safe Base64 encoding
+          const b64 = btoa(unescape(encodeURIComponent(payload)))
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+          return b64;
+        },
+
+        decode(encodedStr) {
+          try {
+            let b64 = encodedStr.replace(/-/g, "+").replace(/_/g, "/");
+            while (b64.length % 4) b64 += "=";
+            const raw = decodeURIComponent(escape(atob(b64)));
+            if (!raw.startsWith("v1|")) return null;
+
+            const parts = raw.split("|");
+            const map = {};
+            parts.slice(1).forEach((p) => {
+              const eqIdx = p.indexOf("=");
+              if (eqIdx > 0) {
+                map[p.slice(0, eqIdx)] = p.slice(eqIdx + 1);
+              }
+            });
+
+            const parseMat = (str) => {
+              if (!str) return null;
+              const [dimPart, valsPart] = str.split(":");
+              const [rStr, cStr] = (dimPart || "").split("x");
+              const rows = clampDim(parseInt(rStr, 10));
+              const cols = clampDim(parseInt(cStr, 10));
+              const tokens = (valsPart || "").split(",");
+              const data = Array.from({ length: rows }, (_, r) =>
+                Array.from({ length: cols }, (_, c) => {
+                  const tok = tokens[r * cols + c];
+                  return tok !== undefined && tok !== "" ? tok : "0";
+                })
+              );
+              return { rows, cols, data };
+            };
+
+            const matA = parseMat(map.A);
+            const matB = parseMat(map.B);
+            if (!matA) return null;
+
+            return {
+              A: matA,
+              B: matB || state.B,
+              showB: map.SB !== "0"
+            };
+          } catch (err) {
+            console.warn("Failed to decode shared matrix link:", err);
+            return null;
+          }
+        }
+      };
+
+      /* ========================================================================
+         4. HELPER UTILITIES (CLIPBOARD, TOASTS, THEME)
+         ======================================================================== */
+      function clampDim(val) {
+        if (!Number.isFinite(val)) return 3;
+        return Math.max(MIN_DIM, Math.min(MAX_DIM, val));
+      }
+
+      function showToast(message, variant = "success") {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        toast.className = `toast ${variant === "warn" ? "toast-warn" : ""}`;
+        toast.innerHTML = `<span class="toast-dot"></span><span>${escapeHtml(message)}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(8px)";
+          toast.style.transition = "all 180ms ease";
+          setTimeout(() => toast.remove(), 200);
+        }, 2800);
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function copyToClipboard(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "fixed";
+        textarea.style.top = "-9999px";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        let ok = false;
+        try {
+          ok = document.execCommand("copy");
+        } catch (e) {
+          ok = false;
+        }
+        document.body.removeChild(textarea);
+
+        if (!ok && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => {});
+          ok = true;
+        }
+        return ok;
+      }
+
+      /* ========================================================================
+         5. MATRIX GRID RENDERING & KEYBOARD / PASTE INTERACTIONS
+         ======================================================================== */
+      function renderMatrixGrid(key) {
+        const mat = state[key];
+        const gridEl = document.getElementById(`grid${key}`);
+        const dimTag = document.getElementById(`dimTag${key}`);
+        const rowsInput = document.getElementById(`rowsInput${key}`);
+        const colsInput = document.getElementById(`colsInput${key}`);
+
+        dimTag.innerHTML = `${mat.rows} &times; ${mat.cols}`;
+        rowsInput.value = mat.rows;
+        colsInput.value = mat.cols;
+
+        gridEl.style.gridTemplateColumns = `repeat(${mat.cols}, minmax(0, 1fr))`;
+        gridEl.innerHTML = "";
+
+        for (let r = 0; r < mat.rows; r++) {
+          for (let c = 0; c < mat.cols; c++) {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.inputMode = "decimal";
+            input.className = "matrix-cell";
+            input.value = mat.data[r][c] ?? "0";
+            input.dataset.matrix = key;
+            input.dataset.row = r;
+            input.dataset.col = c;
+            input.setAttribute("aria-label", `Matrix ${key} row ${r + 1} column ${c + 1}`);
+
+            // Select text on focus for rapid data entry
+            input.addEventListener("focus", (e) => {
+              e.target.select();
+            });
+
+            // Sync state live on input
+            input.addEventListener("input", (e) => {
+              state[key].data[r][c] = e.target.value;
+            });
+
+            // Normalize empty cells on blur
+            input.addEventListener("blur", (e) => {
+              const cleaned = e.target.value.trim();
+              if (cleaned === "" || cleaned === "-") {
+                e.target.value = "0";
+                state[key].data[r][c] = "0";
+              }
+            });
+
+            // Keyboard grid navigation
+            input.addEventListener("keydown", (e) => handleCellKeyDown(e, key, r, c));
+
+            // Multi-cell CSV / TSV / Space-delimited paste
+            input.addEventListener("paste", (e) => handleCellPaste(e, key, r, c));
+
+            gridEl.appendChild(input);
+          }
+        }
+      }
+
+      function focusCell(key, r, c) {
+        const gridEl = document.getElementById(`grid${key}`);
+        const target = gridEl.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+        if (target) {
+          target.focus();
+          target.select();
+        }
+      }
+
+      function handleCellKeyDown(e, key, r, c) {
+        const mat = state[key];
+        const input = e.target;
+
+        if (e.key === "ArrowUp") {
+          if (r > 0) {
+            e.preventDefault();
+            focusCell(key, r - 1, c);
+          }
+        } else if (e.key === "ArrowDown" || e.key === "Enter") {
+          e.preventDefault();
+          if (r < mat.rows - 1) {
+            focusCell(key, r + 1, c);
+          } else if (c < mat.cols - 1) {
+            focusCell(key, 0, c + 1);
+          }
+        } else if (e.key === "ArrowLeft") {
+          if (input.selectionStart === 0 && input.selectionEnd === 0 && c > 0) {
+            e.preventDefault();
+            focusCell(key, r, c - 1);
+          }
+        } else if (e.key === "ArrowRight") {
+          const len = input.value.length;
+          if (input.selectionStart === len && input.selectionEnd === len && c < mat.cols - 1) {
+            e.preventDefault();
+            focusCell(key, r, c + 1);
+          }
+        }
+      }
+
+      function handleCellPaste(e, key, startR, startC) {
+        const text = (e.clipboardData || window.clipboardData)?.getData("text");
+        if (!text) return;
+
+        // Parse rows separated by newlines, cells by tab, comma, semicolon, or whitespace
+        const rawLines = text
+          .trim()
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        if (rawLines.length === 0) return;
+
+        const parsedRows = rawLines.map((line) =>
+          line.includes("\t")
+            ? line.split("\t").map((s) => s.trim())
+            : line.includes(",")
+            ? line.split(",").map((s) => s.trim())
+            : line.split(/\s+/).map((s) => s.trim())
+        );
+
+        // If single scalar value pasted, let default browser paste handle it
+        if (parsedRows.length === 1 && parsedRows[0].length === 1) {
+          return;
+        }
+
+        e.preventDefault();
+        const pasteRows = parsedRows.length;
+        const pasteCols = Math.max(...parsedRows.map((r) => r.length));
+
+        // Expand dimensions if needed (up to 8x8)
+        const requiredRows = Math.min(MAX_DIM, startR + pasteRows);
+        const requiredCols = Math.min(MAX_DIM, startC + pasteCols);
+
+        if (requiredRows > state[key].rows || requiredCols > state[key].cols) {
+          resizeMatrix(
+            key,
+            Math.max(state[key].rows, requiredRows),
+            Math.max(state[key].cols, requiredCols),
+            false
+          );
+        }
+
+        const mat = state[key];
+        for (let r = 0; r < pasteRows; r++) {
+          if (startR + r >= MAX_DIM) break;
+          for (let c = 0; c < parsedRows[r].length; c++) {
+            if (startC + c >= MAX_DIM) break;
+            const token = parsedRows[r][c];
+            if (token !== undefined && token !== "") {
+              mat.data[startR + r][startC + c] = token;
+            }
+          }
+        }
+
+        renderMatrixGrid(key);
+        const clampedNote =
+          startR + pasteRows > MAX_DIM || startC + pasteCols > MAX_DIM ? " (clamped to 8×8 max)" : "";
+        showToast(`Pasted ${Math.min(pasteRows, MAX_DIM)} × ${Math.min(pasteCols, MAX_DIM)} values into Matrix ${key}${clampedNote}`);
+      }
+
+      function resizeMatrix(key, newRows, newCols, shouldRender = true) {
+        newRows = clampDim(newRows);
+        newCols = clampDim(newCols);
+        const old = state[key];
+
+        const nextData = Array.from({ length: newRows }, (_, r) =>
+          Array.from({ length: newCols }, (_, c) =>
+            r < old.rows && c < old.cols ? old.data[r][c] : "0"
+          )
+        );
+
+        state[key] = { rows: newRows, cols: newCols, data: nextData };
+        if (shouldRender) renderMatrixGrid(key);
+      }
+
+      function quickFillMatrix(key, mode) {
+        const { rows, cols } = state[key];
+        const nextData = Array.from({ length: rows }, (_, r) =>
+          Array.from({ length: cols }, (_, c) => {
+            switch (mode) {
+              case "random":
+                return String(Math.floor(Math.random() * 19) - 9);
+              case "identity":
+                return r === c ? "1" : "0";
+              case "zeros":
+              case "clear":
+                return "0";
+              case "uppertri":
+                if (r > c) return "0";
+                // Non-zero random integer on/above diagonal
+                let val = Math.floor(Math.random() * 13) - 6;
+                if (val === 0) val = 2;
+                return String(val);
+              default:
+                return "0";
+            }
+          })
+        );
+
+        state[key].data = nextData;
+        renderMatrixGrid(key);
+      }
+
+      /* ========================================================================
+         6. OPERATIONS EXECUTION & RESULT RENDERING
+         ======================================================================== */
+      function runOperation(op) {
+        const targetKey = state.unaryTarget;
+        const matA = MatrixEngine.toRationalMatrix(state.A.data);
+        const matB = MatrixEngine.toRationalMatrix(state.B.data);
+        const matTarget = targetKey === "A" ? matA : matB;
+
+        try {
+          switch (op) {
+            case "transpose": {
+              const res = MatrixEngine.transpose(matTarget);
+              setMatrixResult(res, `${targetKey}ᵀ · Transpose`);
+              break;
+            }
+            case "inverse": {
+              const res = MatrixEngine.inverse(matTarget, targetKey);
+              setMatrixResult(res, `${targetKey}⁻¹ · Inverse`);
+              break;
+            }
+            case "determinant": {
+              const det = MatrixEngine.determinant(matTarget, targetKey);
+              const note = det.isZero()
+                ? `Matrix ${targetKey} is singular (not invertible).`
+                : `Matrix ${targetKey} is invertible (non-zero determinant).`;
+              setScalarResult(det, `det(${targetKey}) · Determinant`, note);
+              break;
+            }
+            case "rref": {
+              const { matrix, rank } = MatrixEngine.rref(matTarget);
+              setMatrixResult(matrix, `rref(${targetKey}) · Rank ${rank}`);
+              break;
+            }
+            case "trace": {
+              const tr = MatrixEngine.trace(matTarget, targetKey);
+              setScalarResult(
+                tr,
+                `tr(${targetKey}) · Trace`,
+                `Sum of main diagonal entries of ${targetKey}`
+              );
+              break;
+            }
+            case "rank": {
+              const { rank } = MatrixEngine.rref(matTarget);
+              const rows = matTarget.length, cols = matTarget[0].length;
+              setScalarResult(
+                new Rational(rank, 1),
+                `rank(${targetKey}) · Matrix Rank`,
+                `Full possible rank for ${rows} × ${cols} is ${Math.min(rows, cols)}`
+              );
+              break;
+            }
+            case "scalar": {
+              const rawK = document.getElementById("scalarInput").value.trim();
+              if (rawK === "" || Number.isNaN(Number(rawK.includes("/") ? evalFractionSafe(rawK) : rawK))) {
+                throw new Error("Please enter a valid scalar number k (e.g., 2, -0.5, or 1/3).");
+              }
+              const kRat = Rational.fromInput(rawK);
+              const res = MatrixEngine.scalarMultiply(matTarget, kRat);
+              setMatrixResult(res, `${kRat.format(state.numberFormat)} × ${targetKey} · Scalar Multiplication`);
+              break;
+            }
+            case "power": {
+              const rawN = parseInt(document.getElementById("powerInput").value, 10);
+              if (!Number.isInteger(rawN) || rawN < -5 || rawN > 12) {
+                throw new Error("Exponent n must be an integer between -5 and 12.");
+              }
+              const res = MatrixEngine.power(matTarget, rawN, targetKey);
+              setMatrixResult(res, `${targetKey}^${rawN} · Matrix Power`);
+              break;
+            }
+            case "add": {
+              const res = MatrixEngine.add(matA, matB);
+              setMatrixResult(res, "A + B · Matrix Addition");
+              break;
+            }
+            case "subtract": {
+              const res = MatrixEngine.subtract(matA, matB);
+              setMatrixResult(res, "A − B · Matrix Subtraction");
+              break;
+            }
+            case "multiply": {
+              const res = MatrixEngine.multiply(matA, matB, "A", "B");
+              setMatrixResult(res, "A × B · Matrix Multiplication");
+              break;
+            }
+            case "multiplyBA": {
+              const res = MatrixEngine.multiply(matB, matA, "B", "A");
+              setMatrixResult(res, "B × A · Matrix Multiplication");
+              break;
+            }
+          }
+        } catch (err) {
+          setErrorResult(err.message || "Unable to compute matrix operation.");
+        }
+      }
+
+      function evalFractionSafe(str) {
+        const parts = str.split("/");
+        if (parts.length !== 2) return NaN;
+        const a = Number(parts[0]);
+        const b = Number(parts[1]);
+        if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) return NaN;
+        return a / b;
+      }
+
+      function setMatrixResult(matrix, formula) {
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+        state.lastResult = {
+          type: "matrix",
+          value: matrix,
+          formula,
+          dims: `${rows} × ${cols}`
+        };
+        renderResultPanel();
+      }
+
+      function setScalarResult(scalarRational, formula, note = "") {
+        state.lastResult = {
+          type: "scalar",
+          value: scalarRational,
+          formula,
+          note,
+          dims: "Scalar (1 × 1)"
+        };
+        renderResultPanel();
+      }
+
+      function setErrorResult(message) {
+        state.lastResult = {
+          type: "error",
+          message,
+          formula: "Operation Warning"
+        };
+        renderResultPanel();
+      }
+
+      function renderResultPanel() {
+        const opBadge = document.getElementById("resultOpBadge");
+        const dimBadge = document.getElementById("resultDimBadge");
+        const bodyEl = document.getElementById("resultBody");
+        const btnToA = document.getElementById("btnSendToA");
+        const btnToB = document.getElementById("btnSendToB");
+        const exportSelect = document.getElementById("exportSourceSelect");
+
+        const res = state.lastResult;
+        if (!res) return;
+
+        opBadge.textContent = res.formula;
+
+        if (res.type === "error") {
+          dimBadge.classList.add("hidden");
+          btnToA.disabled = true;
+          btnToB.disabled = true;
+          bodyEl.innerHTML = `
+            <div class="result-error-box" role="alert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <div>${escapeHtml(res.message)}</div>
+            </div>
+          `;
+          return;
+        }
+
+        dimBadge.textContent = res.dims;
+        dimBadge.classList.remove("hidden");
+
+        if (res.type === "scalar") {
+          btnToA.disabled = true;
+          btnToB.disabled = true;
+          const formatted = res.value.format(state.numberFormat);
+          bodyEl.innerHTML = `
+            <div class="scalar-result-box">
+              <span class="scalar-label">${escapeHtml(res.formula)}</span>
+              <span class="scalar-value">${escapeHtml(formatted)}</span>
+              ${res.note ? `<span class="scalar-note">${escapeHtml(res.note)}</span>` : ""}
+            </div>
+          `;
+          return;
+        }
+
+        if (res.type === "matrix") {
+          const rows = res.value.length;
+          const cols = res.value[0].length;
+          const canSend = rows <= MAX_DIM && cols <= MAX_DIM;
+          btnToA.disabled = !canSend;
+          btnToB.disabled = !canSend;
+          exportSelect.value = "R";
+
+          const cellsHtml = res.value
+            .map((row) =>
+              row
+                .map(
+                  (cell) =>
+                    `<div class="result-cell">${escapeHtml(cell.format(state.numberFormat))}</div>`
+                )
+                .join("")
+            )
+            .join("");
+
+          bodyEl.innerHTML = `
+            <div class="matrix-bracket-wrap">
+              <div class="matrix-bracket-left" aria-hidden="true"></div>
+              <div class="matrix-grid" style="grid-template-columns: repeat(${cols}, minmax(0, 1fr));">
+                ${cellsHtml}
+              </div>
+              <div class="matrix-bracket-right" aria-hidden="true"></div>
+            </div>
+          `;
+        }
+      }
+
+      /* ========================================================================
+         7. CHAINING & MULTI-FORMAT EXPORT
+         ======================================================================== */
+      function sendResultToMatrix(targetKey) {
+        const res = state.lastResult;
+        if (!res || res.type !== "matrix") return;
+
+        const rows = res.value.length;
+        const cols = res.value[0].length;
+        if (rows > MAX_DIM || cols > MAX_DIM) {
+          showToast(`Result (${rows}×${cols}) exceeds maximum editor size (8×8).`, "warn");
+          return;
+        }
+
+        state[targetKey] = {
+          rows,
+          cols,
+          data: res.value.map((row) =>
+            row.map((cell) => cell.format(state.numberFormat))
+          )
+        };
+
+        if (targetKey === "B" && !state.showB) {
+          setMatrixBVisibility(true);
+        }
+
+        renderMatrixGrid(targetKey);
+        showToast(`Sent ${rows} × ${cols} result into Matrix ${targetKey}`);
+      }
+
+      function getMatrixForExport(sourceKey) {
+        if (sourceKey === "A") {
+          return MatrixEngine.toRationalMatrix(state.A.data);
+        }
+        if (sourceKey === "B") {
+          return MatrixEngine.toRationalMatrix(state.B.data);
+        }
+        if (sourceKey === "R") {
+          if (!state.lastResult) {
+            throw new Error("No result computed yet. Compute an operation or select Matrix A/B.");
+          }
+          if (state.lastResult.type === "scalar") {
+            return [[state.lastResult.value]];
+          }
+          if (state.lastResult.type === "matrix") {
+            return state.lastResult.value;
+          }
+          throw new Error("Current result is an error message and cannot be exported.");
+        }
+        return null;
+      }
+
+      function exportMatrixFormat(formatType) {
+        const sourceKey = document.getElementById("exportSourceSelect").value;
+        let mat;
+        try {
+          mat = getMatrixForExport(sourceKey);
+        } catch (err) {
+          showToast(err.message, "warn");
+          return;
+        }
+
+        const fmt = state.numberFormat;
+        const strGrid = mat.map((row) => row.map((cell) => cell.format(fmt)));
+        let output = "";
+
+        if (formatType === "latex") {
+          const body = strGrid.map((row) => "  " + row.join(" & ")).join(" \\\\\n");
+          output = `\\begin{bmatrix}\n${body}\n\\end{bmatrix}`;
+        } else if (formatType === "csv") {
+          output = strGrid.map((row) => row.join(",")).join("\n");
+        } else if (formatType === "json") {
+          const jsonGrid = mat.map((row) =>
+            row.map((cell) =>
+              fmt === "fraction" && !cell.isFloat && cell.den !== 1
+                ? cell.format("fraction")
+                : Number(cell.valueOf().toFixed(6))
+            )
+          );
+          output = JSON.stringify(jsonGrid);
+        } else if (formatType === "text") {
+          // Compute column widths for crisp alignment
+          const cols = strGrid[0].length;
+          const colWidths = Array.from({ length: cols }, (_, c) =>
+            Math.max(...strGrid.map((row) => row[c].length))
+          );
+          output = strGrid
+            .map(
+              (row) =>
+                "[ " +
+                row.map((val, c) => val.padStart(colWidths[c], " ")).join("  ") +
+                " ]"
+            )
+            .join("\n");
+        }
+
+        copyToClipboard(output);
+        const labelMap = { A: "Matrix A", B: "Matrix B", R: "Result" };
+        const formatLabel = {
+          latex: "LaTeX",
+          csv: "CSV",
+          json: "JSON",
+          text: "Plain Text"
+        }[formatType];
+        showToast(`Copied ${labelMap[sourceKey]} as ${formatLabel}`);
+      }
+
+      /* ========================================================================
+         8. UI STATE SYNCHRONIZATION & EVENT WIRING
+         ======================================================================== */
+      function setMatrixBVisibility(visible) {
+        state.showB = visible;
+        const grid = document.getElementById("matricesGrid");
+        const cardB = document.getElementById("cardMatrixB");
+        const toggleText = document.getElementById("toggleBText");
+
+        if (visible) {
+          cardB.classList.remove("hidden");
+          grid.classList.remove("single-matrix");
+          toggleText.textContent = "Hide Matrix B";
+        } else {
+          cardB.classList.add("hidden");
+          grid.classList.add("single-matrix");
+          toggleText.textContent = "Show Matrix B";
+        }
+      }
+
+      function setUnaryTarget(targetKey) {
+        state.unaryTarget = targetKey;
+        document.getElementById("unaryTargetA").classList.toggle("active", targetKey === "A");
+        document.getElementById("unaryTargetB").classList.toggle("active", targetKey === "B");
+
+        document.getElementById("unaryGroupLabel").textContent =
+          `Single-Matrix Operations (on Matrix ${targetKey})`;
+        document.getElementById("symTranspose").textContent = `${targetKey}ᵀ`;
+        document.getElementById("symInverse").textContent = `${targetKey}⁻¹`;
+        document.getElementById("symDet").textContent = `det(${targetKey})`;
+        document.getElementById("symRref").textContent = `rref(${targetKey})`;
+        document.getElementById("symTrace").textContent = `tr(${targetKey})`;
+        document.getElementById("symRank").textContent = `rank(${targetKey})`;
+        document.getElementById("symScalar").innerHTML = `k &times; ${targetKey}`;
+        document.getElementById("symPower").textContent = `${targetKey}ⁿ`;
+
+        // Auto-unhide Matrix B if user explicitly selects B as unary target
+        if (targetKey === "B" && !state.showB) {
+          setMatrixBVisibility(true);
+        }
+      }
+
+      function initTheme() {
+        let saved = null;
+        try {
+          saved = localStorage.getItem("matrixlab_theme");
+        } catch (e) {}
+
+        const prefersDark =
+          window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = saved || (prefersDark ? "dark" : "light");
+        applyTheme(theme);
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        const isDark = theme === "dark";
+        document.getElementById("iconSun").classList.toggle("hidden", !isDark);
+        document.getElementById("iconMoon").classList.toggle("hidden", isDark);
+        try {
+          localStorage.setItem("matrixlab_theme", theme);
+        } catch (e) {}
+      }
+
+      function loadFromUrlHash() {
+        const hash = window.location.hash || "";
+        const match = hash.match(/data=([A-Za-z0-9\-_]+)/);
+        if (!match) return false;
+
+        const decoded = ShareCodec.decode(match[1]);
+        if (!decoded) return false;
+
+        state.A = decoded.A;
+        state.B = decoded.B;
+        setMatrixBVisibility(decoded.showB);
+        renderMatrixGrid("A");
+        renderMatrixGrid("B");
+        showToast("Loaded shared matrices from link");
+        return true;
+      }
+
+      function bindEvents() {
+        // Theme toggle
+        document.getElementById("btnThemeToggle").addEventListener("click", () => {
+          const current = document.documentElement.getAttribute("data-theme");
+          applyTheme(current === "dark" ? "light" : "dark");
+        });
+
+        // Hide / Show Matrix B
+        document.getElementById("btnToggleB").addEventListener("click", () => {
+          setMatrixBVisibility(!state.showB);
+        });
+
+        // Swap A <-> B
+        document.getElementById("btnSwapAB").addEventListener("click", () => {
+          const temp = state.A;
+          state.A = state.B;
+          state.B = temp;
+          if (!state.showB) setMatrixBVisibility(true);
+          renderMatrixGrid("A");
+          renderMatrixGrid("B");
+          showToast("Swapped Matrix A and Matrix B");
+        });
+
+        // Copy Share Link
+        document.getElementById("btnShareLink").addEventListener("click", () => {
+          const encoded = ShareCodec.encode(state);
+          const newHash = `#data=${encoded}`;
+          try {
+            window.history.replaceState(null, "", newHash);
+          } catch (e) {}
+
+          const baseUrl = window.location.href.split("#")[0];
+          const fullUrl = `${baseUrl}${newHash}`;
+          copyToClipboard(fullUrl);
+          showToast("Shareable matrix link copied to clipboard!");
+        });
+
+        // Dimension Stepper Buttons
+        document.querySelectorAll(".stepper-btn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const key = btn.dataset.matrix;
+            const axis = btn.dataset.axis;
+            const delta = parseInt(btn.dataset.delta, 10);
+            const curRows = state[key].rows;
+            const curCols = state[key].cols;
+
+            if (axis === "rows") {
+              resizeMatrix(key, curRows + delta, curCols);
+            } else {
+              resizeMatrix(key, curRows, curCols + delta);
+            }
+          });
+        });
+
+        // Direct Dimension Inputs
+        ["A", "B"].forEach((key) => {
+          document.getElementById(`rowsInput${key}`).addEventListener("change", (e) => {
+            const val = parseInt(e.target.value, 10);
+            resizeMatrix(key, val, state[key].cols);
+          });
+          document.getElementById(`colsInput${key}`).addEventListener("change", (e) => {
+            const val = parseInt(e.target.value, 10);
+            resizeMatrix(key, state[key].rows, val);
+          });
+        });
+
+        // Quick-Fill Toolbar Buttons
+        document.querySelectorAll("[data-fill]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            quickFillMatrix(btn.dataset.target, btn.dataset.fill);
+          });
+        });
+
+        // Unary Target Switcher (A vs B)
+        document.querySelectorAll("[data-unary-target]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            setUnaryTarget(btn.dataset.unaryTarget);
+          });
+        });
+
+        // Operation Buttons
+        document.querySelectorAll("[data-op]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            runOperation(btn.dataset.op);
+          });
+        });
+
+        // Enter key inside scalar or power inline inputs triggers operation immediately
+        document.getElementById("scalarInput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            runOperation("scalar");
+          }
+        });
+        document.getElementById("powerInput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            runOperation("power");
+          }
+        });
+
+        // Decimal vs Fraction Display Toggle
+        document.querySelectorAll("[data-format]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            state.numberFormat = btn.dataset.format;
+            document.getElementById("fmtDecimal").classList.toggle("active", state.numberFormat === "decimal");
+            document.getElementById("fmtFraction").classList.toggle("active", state.numberFormat === "fraction");
+            renderResultPanel();
+          });
+        });
+
+        // Send Result -> Matrix A / Matrix B
+        document.getElementById("btnSendToA").addEventListener("click", () => sendResultToMatrix("A"));
+        document.getElementById("btnSendToB").addEventListener("click", () => sendResultToMatrix("B"));
+
+        // Export Format Buttons
+        document.querySelectorAll("[data-export]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            exportMatrixFormat(btn.dataset.export);
+          });
+        });
+
+        // Listen for external hash changes
+        window.addEventListener("hashchange", loadFromUrlHash);
+      }
+
+      // Bootstrap Application
+      window.addEventListener("DOMContentLoaded", () => {
+        initTheme();
+        bindEvents();
+        const loadedShared = loadFromUrlHash();
+        if (!loadedShared) {
+          renderMatrixGrid("A");
+          renderMatrixGrid("B");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
